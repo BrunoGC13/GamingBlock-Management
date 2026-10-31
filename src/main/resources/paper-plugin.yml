@@ -10,7 +10,7 @@ authors: [ BrunoGC13 ]
 website: brunoglotz.com ; gamingblock.de
 
 permissions:
-  powersmp.commands.online_players:
+  gamingblock.commands.online_players:
     description: "Shows current connected players"
     default: op
 
