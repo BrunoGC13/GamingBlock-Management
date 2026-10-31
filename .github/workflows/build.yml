@@ -6,33 +6,70 @@ on:
       - main
 
   workflow_dispatch:
-  
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-main
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: self-hosted
-    permissions:
-      contents: write 
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Update & Install Java
+      - name: Update and install Java
         run: |
           sudo apt update -y
           sudo apt upgrade -y
           sudo apt install openjdk-21-jre openjdk-21-jdk -y
 
-      - name: Run the dev build script
+      - name: Configure version
+        id: version
         run: |
-          sudo chmod +x scripts/build.sh
-          ./scripts/build.sh
+          VERSION="1.0.${GITHUB_RUN_NUMBER}"
+          TAG="v${VERSION}"
+
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
+          echo "Building version: ${VERSION}"
+          echo "Using tag: ${TAG}"
+
+      - name: Create and push version tag
+        env:
+          VERSION_TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          if git ls-remote --exit-code --tags origin "refs/tags/${VERSION_TAG}" > /dev/null 2>&1; then
+            echo "Tag ${VERSION_TAG} already exists."
+            exit 1
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git tag -a "${VERSION_TAG}" -m "Release ${VERSION_TAG}"
+          git push origin "${VERSION_TAG}"
+
+      - name: Build plugin
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          chmod +x scripts/build.sh
+          ./scripts/build.sh "-Pversion=${VERSION}"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: Release Build #${{ github.run_number }} 
-          tag_name: b${{ github.run_number }}
-          generate_release_notes: true 
+          name: Release ${{ steps.version.outputs.tag }}
+          tag_name: ${{ steps.version.outputs.tag }}
+          generate_release_notes: true
           draft: false
           prerelease: false
           files: |
