@@ -1,0 +1,10 @@
+name: gamingblock_managment
+description: $description
+version: '${version}'
+
+main: net.tgc.gamingblock_management.Gamingblock
+api-version: '1.21.11'
+load: STARTUP
+
+authors: [ BrunoGC13 ]
+website: brunoglotz.com ; gamingblock.de
