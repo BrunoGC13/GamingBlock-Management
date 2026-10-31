@@ -11,5 +11,5 @@ website: brunoglotz.com ; gamingblock.de
 
 permissions:
   powersmp.commands.online_players:
-    description: "Shows connected players"
+    description: "Shows current connected players"
     default: op
