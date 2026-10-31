@@ -8,3 +8,8 @@ load: STARTUP
 
 authors: [ BrunoGC13 ]
 website: brunoglotz.com ; gamingblock.de
+
+permissions:
+  powersmp.commands.online_players:
+    description: "Shows connected players"
+    default: op
