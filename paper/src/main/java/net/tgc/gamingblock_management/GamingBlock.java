@@ -11,6 +11,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.http.WebSocket;
 import java.util.List;
 
 public final class GamingBlock extends JavaPlugin {
