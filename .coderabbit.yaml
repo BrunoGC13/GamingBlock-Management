@@ -1,5 +1,8 @@
 language: "en-US"
+
 reviews:
   profile: "chill"
+  auto_review:
+    drafts: true
   autofix:
     enabled: true
