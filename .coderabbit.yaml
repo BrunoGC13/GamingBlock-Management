@@ -2,6 +2,6 @@ language: "en-US"
 reviews:
   profile: "chill"
   autofix:
-    enabled: true  #
+    enabled: true
   tools:
     github-checks: true
