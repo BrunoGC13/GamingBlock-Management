@@ -3,5 +3,3 @@ reviews:
   profile: "chill"
   autofix:
     enabled: true
-  tools:
-    github-checks: true
