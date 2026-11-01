@@ -29,7 +29,6 @@ public final class GamingBlock extends JavaPlugin {
         fileManager.loadFiles();
 
         vanishManager = new VanishManager(this);
-        getServer().getPluginManager().registerEvents(vanishManager, this);
 
         commandManager = new CommandManager(this);
         commandManager.registerCommand("onlineplayers", List.of("olist", "oplayers", "players"), "Shows online players", new OnlinePlayers());
