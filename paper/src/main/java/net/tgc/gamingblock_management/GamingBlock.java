@@ -1,7 +1,9 @@
 package net.tgc.gamingblock_management;
 
 import net.tgc.gamingblock_management.commands.OnlinePlayers;
+import net.tgc.gamingblock_management.commands.VanishCommand;
 import net.tgc.gamingblock_management.manager.CommandManager;
+import net.tgc.gamingblock_management.manager.VanishManager;
 import net.tgc.gamingblock_management.util.FileManager;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -14,6 +16,7 @@ import java.util.List;
 public final class GamingBlock extends JavaPlugin {
     private CommandManager commandManager;
     private FileManager fileManager;
+    private VanishManager vanishManager;
 
     private File fileManagerFile;
     private FileConfiguration fileManagerData;
@@ -25,9 +28,11 @@ public final class GamingBlock extends JavaPlugin {
         fileManager = new FileManager(this);
         fileManager.loadFiles();
 
-        commandManager = new CommandManager(this);
+        vanishManager = new VanishManager(this);
 
+        commandManager = new CommandManager(this);
         commandManager.registerCommand("onlineplayers", List.of("olist", "oplayers", "players"), "Shows online players", new OnlinePlayers());
+        commandManager.registerCommand("vanish", List.of("v"), "Set vanish mode", new VanishCommand(this));
 
         getLogger().info("GamingBlock Management Plugin loaded!");
     }
@@ -36,6 +41,10 @@ public final class GamingBlock extends JavaPlugin {
     public void onDisable() {
         fileManager.saveFiles();
         getLogger().info("GamingBlock Management Plugin disabled!");
+    }
+
+    public VanishManager getVanishManager() {
+        return vanishManager;
     }
 
     public FileConfiguration getFileManagerData() {
