@@ -23,7 +23,7 @@ public class VanishCommand implements BasicCommand {
 
     @Override
     public void execute(CommandSourceStack source, String[] args) {
-        if (!(source.getExecutor() instanceof Player p)) return;
+        if (!(source.getSender() instanceof Player p)) return;
 
         if (args.length == 0) {
             if (plugin.getVanishManager().setVanish(p)) {
