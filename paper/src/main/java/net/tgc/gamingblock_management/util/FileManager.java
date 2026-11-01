@@ -1,6 +1,6 @@
 package net.tgc.gamingblock_management.util;
 
-import net.tgc.gamingblock_management.Gamingblock;
+import net.tgc.gamingblock_management.GamingBlock;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -11,11 +11,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class FileManager {
-    private Gamingblock plugin;
+    private GamingBlock plugin;
 
     Map<String, File> files = new HashMap<>();
 
-    public FileManager(Gamingblock plugin) {
+    public FileManager(GamingBlock plugin) {
         this.plugin = plugin;
     }
 

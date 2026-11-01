@@ -74,4 +74,3 @@ jobs:
           prerelease: false
           files: |
             paper/build/libs/*.jar
-            

@@ -1,14 +1,14 @@
 package net.tgc.gamingblock_management.manager;
 
 import io.papermc.paper.command.brigadier.BasicCommand;
-import net.tgc.gamingblock_management.Gamingblock;
+import net.tgc.gamingblock_management.GamingBlock;
 
 import java.util.Collection;
 
 public class CommandManager {
-    Gamingblock plugin;
+    GamingBlock plugin;
 
-    public CommandManager(Gamingblock plugin) {
+    public CommandManager(GamingBlock plugin) {
         this.plugin = plugin;
     }
 
