@@ -15,6 +15,7 @@ import java.util.List;
 public class VanishCommand implements BasicCommand {
     private GamingBlock plugin;
     MiniMessage mm = MiniMessage.miniMessage();
+    private final String adminPerm = "gamingblock.vanish.admin";
 
     public VanishCommand(GamingBlock plugin) {
         this.plugin = plugin;
@@ -31,6 +32,15 @@ public class VanishCommand implements BasicCommand {
                 p.sendMessage(mm.deserialize("<red>Disabled vanish."));
             }
         } else {
+            if (!p.hasPermission(adminPerm)) {
+                if (plugin.getVanishManager().setVanish(p)) {
+                    p.sendMessage(mm.deserialize("<green>Enabled vanish."));
+                } else {
+                    p.sendMessage(mm.deserialize("<red>Disabled vanish."));
+                }
+                return;
+            }
+
             Player target = Bukkit.getPlayer(args[0]);
             if (target == null) {
                 p.sendMessage(mm.deserialize("<red>That player does not exist!"));
@@ -49,7 +59,7 @@ public class VanishCommand implements BasicCommand {
 
     @Override
     public Collection<String> suggest(CommandSourceStack source, String[] args) {
-        if (!source.getSender().hasPermission("gamingblock.vanish.admin")) return List.of();
+        if (!source.getSender().hasPermission(adminPerm)) return List.of();
 
         if (args.length == 0) {
             return Bukkit.getOnlinePlayers().stream()
