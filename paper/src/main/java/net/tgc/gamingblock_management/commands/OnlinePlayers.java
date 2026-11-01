@@ -23,13 +23,18 @@ public class OnlinePlayers implements BasicCommand {
         Collection<? extends Player> onlinePlayers = Bukkit.getOnlinePlayers();
 
         p.sendMessage(mm.deserialize(onlinePlayers.size() + " players currently online:"));
-        Component players = null;
+        Component players = Component.empty();
+        boolean first = true;
 
         for (Player online : onlinePlayers) {
-            players.append(mm.deserialize(", " + online.getName()));
+            if (!first) {
+                players = players.append(Component.text(", "));
+            }
+            players = players.append(Component.text(online.getName()));
+            first = false;
         }
 
-        if (players != null) {
+        if (!onlinePlayers.isEmpty()) {
             p.sendMessage(players);
         }
 
