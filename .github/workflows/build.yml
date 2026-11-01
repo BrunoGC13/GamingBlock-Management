@@ -73,4 +73,5 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            build/libs/*.jar
+            paper/build/libs/*.jar
+            

@@ -1,5 +1,5 @@
 name: gamingblock_managment
-description: $description
+description: ${description}
 version: '${version}'
 
 main: net.tgc.gamingblock_management.Gamingblock
