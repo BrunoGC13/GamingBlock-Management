@@ -28,7 +28,7 @@ jobs:
         run: |
           sudo apt update -y
           sudo apt upgrade -y
-          sudo apt install openjdk-21-jre openjdk-21-jdk -y
+          sudo apt install openjdk-21-jre openjdk-21-jdk openjdk-25-jre openjdk-25-jdk -y
 
       - name: Configure version
         id: version
@@ -74,3 +74,4 @@ jobs:
           prerelease: false
           files: |
             paper/build/libs/*.jar
+            velocity/build/libs/*.jar
