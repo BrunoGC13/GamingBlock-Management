@@ -59,15 +59,17 @@ public class FileManager {
         }
     }
 
-    public void saveFileData(String name, FileConfiguration data) {
-        if (name == null || data == null) return;
+    public boolean saveFileData(String name, FileConfiguration data) {
+        if (name == null || data == null || getFile(name) == null) return false;
 
         try {
             data.save(getFile(name));
+            return true;
         } catch (IOException e) {
             plugin.getLogger().severe(
                     "Could not save " + name + ". Error: " + e.getMessage()
             );
+            return false;
         }
     }
 

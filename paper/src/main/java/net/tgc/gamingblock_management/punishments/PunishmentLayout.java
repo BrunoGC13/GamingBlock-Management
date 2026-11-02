@@ -4,6 +4,9 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.tgc.gamingblock_management.GamingBlock;
 
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+
 public class PunishmentLayout {
     private final String name;
     private final String[] messages;
@@ -77,7 +80,11 @@ public class PunishmentLayout {
     ) {
         Component message = Component.empty();
 
-        for (String template : messages) {
+        for (int index = 0; index < messages.length; index++) {
+            String template = messages[index];
+            if (index > 0) {
+                message = message.append(miniMessage.deserialize("<newline>"));
+            }
             String text = template
                     .replace("%OPERATOR%", operatorName == null ? "CONSOLE" : operatorName)
                     .replace("%REASON%", reason == null ? "" : reason)
@@ -87,7 +94,7 @@ public class PunishmentLayout {
             if (endsAt == null) {
                 text = text.replace("%ENDS_ON%", "Never");
             } else {
-                text = text.replace("%ENDS_ON%", String.valueOf(endsAt));
+                text = text.replace("%ENDS_ON%", DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochMilli(endsAt)));
             }
 
             message = message.append(miniMessage.deserialize(text));

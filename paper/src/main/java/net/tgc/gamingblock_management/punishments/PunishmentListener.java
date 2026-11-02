@@ -1,11 +1,13 @@
 package net.tgc.gamingblock_management.punishments;
 
 import net.kyori.adventure.text.Component;
+import com.destroystokyo.paper.profile.PlayerProfile;
+import io.papermc.paper.connection.PlayerConfigurationConnection;
+import io.papermc.paper.connection.PlayerLoginConnection;
+import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
 import net.tgc.gamingblock_management.GamingBlock;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerJoinEvent;
 
 import java.util.Optional;
 
@@ -17,12 +19,21 @@ public class PunishmentListener implements Listener {
     }
 
     @EventHandler
-    public void beforePlayerJoin(PlayerJoinEvent event) {
-        Player player = event.getPlayer();
+    public void validateLogin(PlayerConnectionValidateLoginEvent event) {
+        PlayerProfile profile;
+        if (event.getConnection() instanceof PlayerLoginConnection connection) {
+            profile = connection.getAuthenticatedProfile();
+        } else if (event.getConnection() instanceof PlayerConfigurationConnection connection) {
+            profile = connection.getProfile();
+        } else {
+            return;
+        }
+
+        if (profile == null || profile.getId() == null) return;
 
         Optional<PunishmentEntry> activeBan =
                 plugin.getPunishmentManager()
-                        .getActiveBan(player.getUniqueId());
+                        .getActiveBan(profile.getId());
 
         if (activeBan.isEmpty()) {
             return;
@@ -32,7 +43,7 @@ public class PunishmentListener implements Listener {
 
         Component message = getPunishmentMessage(entry);
 
-        player.kick(message);
+        event.kickMessage(message);
     }
 
     private Component getPunishmentMessage(PunishmentEntry entry) {

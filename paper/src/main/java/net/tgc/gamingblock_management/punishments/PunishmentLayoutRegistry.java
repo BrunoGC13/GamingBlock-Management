@@ -25,8 +25,8 @@ public class PunishmentLayoutRegistry {
         if (layouts == null) return;
 
         for (String key : layouts.getKeys(false)) {
-            String[] messages = layouts.getStringList("layouts." + key + ".messages").toArray(new String[0]);
-            String name = layouts.getString("layouts." + key + ".name");
+            String[] messages = layouts.getStringList(key + ".messages").toArray(new String[0]);
+            String name = layouts.getString(key + ".name");
 
             register(new PunishmentLayout(name, messages));
         }
