@@ -37,7 +37,6 @@ public class VanishCommand implements BasicCommand {
                     p.sendMessage(mm.deserialize("<green>Enabled vanish."));
                 } else {
                     p.sendMessage(mm.deserialize("<red>Disabled vanish."));
-                    // fixed perms
                 }
                 return;
             }

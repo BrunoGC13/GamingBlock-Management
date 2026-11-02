@@ -48,11 +48,26 @@ public class FileManager {
 
     public void saveFileData(String name) {
         if (name == null) return;
+
         try {
             FileConfiguration data = getFileData(name);
             data.save(getFile(name));
         } catch (IOException e) {
-            plugin.getLogger().severe("Could not save " + name + " . Error: " + e.getMessage());
+            plugin.getLogger().severe(
+                    "Could not save " + name + ". Error: " + e.getMessage()
+            );
+        }
+    }
+
+    public void saveFileData(String name, FileConfiguration data) {
+        if (name == null || data == null) return;
+
+        try {
+            data.save(getFile(name));
+        } catch (IOException e) {
+            plugin.getLogger().severe(
+                    "Could not save " + name + ". Error: " + e.getMessage()
+            );
         }
     }
 
@@ -77,7 +92,8 @@ public class FileManager {
     }
 
     public void loadFiles() {
-        ConfigurationSection section = plugin.getFileManagerData().getConfigurationSection("files");
+        ConfigurationSection section =
+                plugin.getFileManagerData().getConfigurationSection("files");
 
         if (section == null) return;
 
