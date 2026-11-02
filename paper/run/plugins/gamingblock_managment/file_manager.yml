@@ -1,7 +1,0 @@
-files:
-  layouts:
-    yml:
-      name: layouts.yml
-  punishments:
-    yml:
-      name: punishments.yml
