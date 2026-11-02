@@ -9,7 +9,6 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 
 import java.time.Instant;
-import java.time.format.DateTimeParseException;
 import java.util.*;
 
 public class PunishmentManager {
@@ -35,22 +34,16 @@ public class PunishmentManager {
             return new PunishmentResult(punishment, false);
         }
 
-        if (punishment.getType() == PunishmentType.TEMPBAN
-                && (punishment.getEndsOn() == null
-                || !punishment.getEndsOn().toInstant().isAfter(Instant.now()))) {
-            return new PunishmentResult(punishment, false);
-        }
-
         PunishmentEntry entry = PunishmentEntry.fromPunishment(punishment);
-        if (!addAndSaveHistoryEntry(entry)) {
-            return new PunishmentResult(punishment, false);
-        }
+        addHistoryEntry(entry);
 
         if (punishment.getType() == PunishmentType.BAN
                 || punishment.getType() == PunishmentType.TEMPBAN
                 || punishment.getType() == PunishmentType.KICK) {
-            kickTarget(punishment, entry);
+            kickTarget(entry);
         }
+
+        save();
 
         return new PunishmentResult(punishment, true);
     }
@@ -75,7 +68,10 @@ public class PunishmentManager {
                 reason == null ? "" : reason
         );
 
-        return addAndSaveHistoryEntry(entry);
+        addHistoryEntry(entry);
+        save();
+
+        return true;
     }
 
     public List<PunishmentEntry> getHistory(UUID playerUuid) {
@@ -95,7 +91,7 @@ public class PunishmentManager {
 
             try {
                 entries.add(PunishmentEntry.fromMap(map));
-            } catch (IllegalArgumentException | DateTimeParseException exception) {
+            } catch (IllegalArgumentException exception) {
                 plugin.getLogger().warning(
                         "Could not load punishment history entry for " + playerUuid
                 );
@@ -184,42 +180,36 @@ public class PunishmentManager {
         );
     }
 
-    private boolean addAndSaveHistoryEntry(PunishmentEntry entry) {
-        String playerPath = "players." + entry.getTargetUuid();
-        Object previousHistory = punishments.get(playerPath + ".history");
-        Object previousName = punishments.get(playerPath + ".name");
-        addHistoryEntry(entry);
-        if (plugin.getFileManager().saveFileData(FILE_NAME, punishments)) {
-            return true;
-        }
-        punishments.set(playerPath + ".history", previousHistory);
-        punishments.set(playerPath + ".name", previousName);
-        return false;
-    }
-
-    private void kickTarget(Punishment punishment, PunishmentEntry entry) {
-        if (!punishment.getTarget().isOnline()) {
-            return;
-        }
-
-        Player target = Bukkit.getPlayer(punishment.getTarget().getUniqueId());
+    private void kickTarget(PunishmentEntry entry) {
+        Player target = Bukkit.getPlayer(entry.getTargetUuid());
 
         if (target == null) {
             return;
         }
 
-        if (punishment.getLayout() != null) {
-            target.kick(punishment.getLayout().render(entry, plugin.getServerName()));
-            return;
+        if (entry.getLayout() != null) {
+            Optional<PunishmentLayout> layout =
+                    plugin.getPunishmentLayoutRegistry()
+                            .get(entry.getLayout());
+
+            if (layout.isPresent()) {
+                target.kick(
+                        layout.get().render(
+                                entry,
+                                plugin.getServerName()
+                        )
+                );
+                return;
+            }
         }
 
         Component message = miniMessage.deserialize(
                 "<red>You have been punished.<newline>"
                         + "<gray>Type: <white>"
-                        + punishment.getType().name().toLowerCase()
+                        + entry.getType().name().toLowerCase()
                         + "<newline>"
                         + "<gray>Reason: <white>"
-                        + punishment.getReason()
+                        + entry.getReason()
         );
 
         target.kick(message);
@@ -229,4 +219,7 @@ public class PunishmentManager {
         return "players." + playerUuid + ".history";
     }
 
+    private void save() {
+        plugin.getFileManager().saveFileData(FILE_NAME, punishments);
+    }
 }

@@ -1,13 +1,11 @@
 package net.tgc.gamingblock_management;
 
 import net.tgc.gamingblock_management.commands.OnlinePlayers;
+import net.tgc.gamingblock_management.commands.PunishmentCommand;
 import net.tgc.gamingblock_management.commands.VanishCommand;
 import net.tgc.gamingblock_management.manager.CommandManager;
 import net.tgc.gamingblock_management.manager.VanishManager;
-import net.tgc.gamingblock_management.punishments.PunishmentLayout;
-import net.tgc.gamingblock_management.punishments.PunishmentLayoutRegistry;
-import net.tgc.gamingblock_management.punishments.PunishmentListener;
-import net.tgc.gamingblock_management.punishments.PunishmentManager;
+import net.tgc.gamingblock_management.punishments.*;
 import net.tgc.gamingblock_management.util.FileManager;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -68,6 +66,33 @@ public final class GamingBlock extends JavaPlugin {
                 List.of("v"),
                 "Set vanish mode",
                 new VanishCommand(this)
+        );
+
+        commandManager.registerCommand(
+                "ban",
+                "Permanently ban a player",
+                new PunishmentCommand(
+                        this,
+                        PunishmentType.BAN
+                )
+        );
+
+        commandManager.registerCommand(
+                "kick",
+                "Kick a player",
+                new PunishmentCommand(
+                        this,
+                        PunishmentType.KICK
+                )
+        );
+
+        commandManager.registerCommand(
+                "tempban",
+                "Temporarily ban a player",
+                new PunishmentCommand(
+                        this,
+                        PunishmentType.TEMPBAN
+                )
         );
 
         getLogger().info("GamingBlock Management Plugin loaded!");

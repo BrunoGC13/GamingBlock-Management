@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/paper/GamingBlock_Management.paper.main.iml" filepath="$PROJECT_DIR$/.idea/modules/paper/GamingBlock_Management.paper.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/paper/GamingBlock_Management.paper.test.iml" filepath="$PROJECT_DIR$/.idea/modules/paper/GamingBlock_Management.paper.test.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/velocity/GamingBlock_Management.velocity.main.iml" filepath="$PROJECT_DIR$/.idea/modules/velocity/GamingBlock_Management.velocity.main.iml" />
     </modules>
   </component>

@@ -17,3 +17,15 @@ permissions:
   gamingblock.commands.suspection:
     description: "Manages player suspections"
     default: op
+
+  gamingblock.commands.punishments.ban:
+    description: "Ban a player"
+    default: op
+
+  gamingblock.commands.punishments.tempban:
+    description: "Tempban a player"
+    default: op
+
+  gamingblock.commands.punishments.kick:
+    description: "Kick a player"
+    default: op
