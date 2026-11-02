@@ -11,6 +11,7 @@ import org.bukkit.event.Listener;
 
 import java.util.Optional;
 
+@SuppressWarnings("UnstableApiUsage")
 public class PunishmentListener implements Listener {
     private final GamingBlock plugin;
 
