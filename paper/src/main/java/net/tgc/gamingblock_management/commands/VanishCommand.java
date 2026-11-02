@@ -37,7 +37,6 @@ public class VanishCommand implements BasicCommand {
                     p.sendMessage(mm.deserialize("<green>Enabled vanish."));
                 } else {
                     p.sendMessage(mm.deserialize("<red>Disabled vanish."));
-                    // fixed perms
                 }
                 return;
             }
@@ -53,7 +52,7 @@ public class VanishCommand implements BasicCommand {
                 target.sendMessage(mm.deserialize("<green>Vanish has been enabled by " + p.getName() + "."));
             } else {
                 p.sendMessage(mm.deserialize("<red>Disabled vanish for " + target.getName() + "."));
-                target.sendMessage(mm.deserialize("<green>Vanish has been enabled by " + p.getName() + "."));
+                target.sendMessage(mm.deserialize("<red>Vanish has been disabled by " + p.getName() + "."));
             }
         }
     }

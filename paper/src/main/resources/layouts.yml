@@ -1,0 +1,13 @@
+layouts:
+  default:
+    name: "default"
+    messages:
+      - "%SERVER_NAME%"
+      - ""
+      - "<white>Type: <red>%TYPE%"
+      - "<white>Issuer: <red>%OPERATOR%"
+      - "<white>Expires at: <red>%ENDS_ON%"
+      - ""
+      - "<gray>------------"
+      - ""
+      - "<red>Reason: <white>%REASON%"
