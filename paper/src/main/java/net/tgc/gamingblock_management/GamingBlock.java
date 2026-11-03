@@ -3,10 +3,12 @@ package net.tgc.gamingblock_management;
 import net.tgc.gamingblock_management.commands.OnlinePlayers;
 import net.tgc.gamingblock_management.commands.PunishmentCommand;
 import net.tgc.gamingblock_management.commands.VanishCommand;
+import net.tgc.gamingblock_management.db.DatabaseManager;
 import net.tgc.gamingblock_management.manager.CommandManager;
 import net.tgc.gamingblock_management.manager.VanishManager;
 import net.tgc.gamingblock_management.punishments.*;
 import net.tgc.gamingblock_management.util.FileManager;
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -21,6 +23,7 @@ public final class GamingBlock extends JavaPlugin {
     private VanishManager vanishManager;
     private PunishmentManager punishmentManager;
     private PunishmentLayoutRegistry punishmentLayoutRegistry;
+    private DatabaseManager databaseManager;
     public String serverName;
 
     private File fileManagerFile;
@@ -32,6 +35,8 @@ public final class GamingBlock extends JavaPlugin {
         fileManagerData = YamlConfiguration.loadConfiguration(fileManagerFile);
         fileManager = new FileManager(this);
         serverName = getConfig().getString("server-name", "<gray>[<blue>Gaming<red>Block<gray>]");
+
+        databaseManager = new DatabaseManager(this);
 
         String[] files = {
                 "punishments.yml",
@@ -100,8 +105,23 @@ public final class GamingBlock extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        fileManager.saveFiles();
+        if (punishmentManager != null) {
+            punishmentManager.close();
+        }
+
+        if (fileManager != null) {
+            fileManager.saveFiles();
+        }
+
+        if (databaseManager != null) {
+            databaseManager.close();
+        }
+
         getLogger().info("GamingBlock Management Plugin disabled!");
+    }
+
+    public DatabaseManager getDatabaseManager() {
+        return databaseManager;
     }
 
     public VanishManager getVanishManager() {
@@ -137,5 +157,10 @@ public final class GamingBlock extends JavaPlugin {
 
     public String getServerName() {
         return serverName;
+    }
+
+    public boolean isRunningOnVelocity() {
+        // Checks if proxies.velocity.enabled is set to true in paper-global.yml
+        return Bukkit.getServerConfig().isProxyEnabled();
     }
 }

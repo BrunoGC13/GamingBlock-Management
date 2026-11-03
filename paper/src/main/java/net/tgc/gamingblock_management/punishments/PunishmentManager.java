@@ -3,12 +3,18 @@ package net.tgc.gamingblock_management.punishments;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.tgc.gamingblock_management.GamingBlock;
+import net.tgc.gamingblock_management.db.DatabaseManager;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.entity.Player;
 
-import java.time.Instant;
+import java.sql.SQLException;
+import java.time.temporal.ChronoUnit;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.*;
 
 public class PunishmentManager {
@@ -17,10 +23,14 @@ public class PunishmentManager {
     private final GamingBlock plugin;
     private final FileConfiguration punishments;
     private final MiniMessage miniMessage = MiniMessage.miniMessage();
+    private final DatabaseManager databaseManager;
+    private final ExecutorService yamlWriter = Executors.newSingleThreadExecutor();
+    private final ExecutorService databaseWriter = Executors.newSingleThreadExecutor();
 
     public PunishmentManager(GamingBlock plugin) {
         this.plugin = plugin;
         this.punishments = plugin.getFileManager().getFileData(FILE_NAME);
+        this.databaseManager = plugin.getDatabaseManager();
     }
 
     public PunishmentResult punish(Punishment punishment) {
@@ -42,8 +52,6 @@ public class PunishmentManager {
                 || punishment.getType() == PunishmentType.KICK) {
             kickTarget(entry);
         }
-
-        save();
 
         return new PunishmentResult(punishment, true);
     }
@@ -69,7 +77,6 @@ public class PunishmentManager {
         );
 
         addHistoryEntry(entry);
-        save();
 
         return true;
     }
@@ -79,13 +86,30 @@ public class PunishmentManager {
             return List.of();
         }
 
+        if (databaseManager != null && databaseManager.isEnabled()) {
+            try {
+                List<PunishmentEntry> databaseHistory = databaseManager.getHistory(playerUuid);
+                return mergeHistory(databaseHistory, getYamlHistory(playerUuid));
+            } catch (SQLException exception) {
+                plugin.getLogger().warning(
+                        "Could not read punishment history from the "
+                                + "external database. Falling back to YAML: "
+                                + exception.getMessage()
+                );
+            }
+        }
+
+        return getYamlHistory(playerUuid);
+    }
+
+    private synchronized List<PunishmentEntry> getYamlHistory(UUID playerUuid) {
         String path = historyPath(playerUuid);
         List<?> rawEntries = punishments.getList(path, List.of());
 
         List<PunishmentEntry> entries = new ArrayList<>();
 
         for (Object rawEntry : rawEntries) {
-            if (!(rawEntry instanceof java.util.Map<?, ?> map)) {
+            if (!(rawEntry instanceof Map<?, ?> map)) {
                 continue;
             }
 
@@ -93,12 +117,62 @@ public class PunishmentManager {
                 entries.add(PunishmentEntry.fromMap(map));
             } catch (IllegalArgumentException exception) {
                 plugin.getLogger().warning(
-                        "Could not load punishment history entry for " + playerUuid
+                        "Could not load punishment history entry for "
+                                + playerUuid
                 );
             }
         }
 
         return Collections.unmodifiableList(entries);
+    }
+
+    // A database timestamp has microsecond precision. Match mirrored records at
+    // that precision, retaining the largest count from either history.
+    static List<PunishmentEntry> mergeHistory(
+            List<PunishmentEntry> databaseHistory, List<PunishmentEntry> yamlHistory
+    ) {
+        List<PunishmentEntry> merged = new ArrayList<>(databaseHistory);
+        Map<Map<String, Object>, Integer> remaining = new HashMap<>();
+        for (PunishmentEntry entry : databaseHistory) {
+            remaining.merge(historyKey(entry), 1, Integer::sum);
+        }
+        for (PunishmentEntry entry : yamlHistory) {
+            Map<String, Object> key = historyKey(entry);
+            int matches = remaining.getOrDefault(key, 0);
+            if (matches > 0) {
+                remaining.put(key, matches - 1);
+            } else {
+                merged.add(entry);
+            }
+        }
+        merged.sort(Comparator.comparing(PunishmentEntry::getCreatedAt));
+        return List.copyOf(merged);
+    }
+
+    private static Map<String, Object> historyKey(PunishmentEntry entry) {
+        Map<String, Object> key = entry.toMap();
+        key.put("createdAt", entry.getCreatedAt().truncatedTo(ChronoUnit.MICROS));
+        key.put("endsAt", entry.getEndsAt() == null ? null
+                : entry.getEndsAt().truncatedTo(ChronoUnit.MICROS));
+        return key;
+    }
+
+    public Optional<PunishmentEntry> getActiveBanFromSnapshot(
+            UUID playerUuid, List<PunishmentEntry> snapshot
+    ) {
+        return activeBan(mergeHistory(snapshot, getYamlHistory(playerUuid)));
+    }
+
+    public static Optional<PunishmentEntry> activeBan(List<PunishmentEntry> history) {
+        for (int index = history.size() - 1; index >= 0; index--) {
+            PunishmentEntry entry = history.get(index);
+            if (entry.getType() == PunishmentType.BAN
+                    || entry.getType() == PunishmentType.TEMPBAN
+                    || entry.getType() == PunishmentType.UNBAN) {
+                return entry.isActiveBan() ? Optional.of(entry) : Optional.empty();
+            }
+        }
+        return Optional.empty();
     }
 
     public Optional<PunishmentEntry> getLatestEntry(UUID playerUuid) {
@@ -145,29 +219,16 @@ public class PunishmentManager {
     }
 
     public Optional<PunishmentEntry> getActiveBan(UUID playerUuid) {
-        Optional<PunishmentEntry> latestRestriction =
-                getLatestRestriction(playerUuid);
-
-        if (latestRestriction.isEmpty()) {
-            return Optional.empty();
-        }
-
-        PunishmentEntry entry = latestRestriction.get();
-
-        if (!entry.isActiveBan()) {
-            return Optional.empty();
-        }
-
-        return Optional.of(entry);
+        return activeBan(getHistory(playerUuid));
     }
 
-    private void addHistoryEntry(PunishmentEntry entry) {
+    private synchronized void addHistoryEntry(PunishmentEntry entry) {
         UUID playerUuid = entry.getTargetUuid();
         String path = historyPath(playerUuid);
 
         List<Map<String, Object>> history = new ArrayList<>();
 
-        for (PunishmentEntry existingEntry : getHistory(playerUuid)) {
+        for (PunishmentEntry existingEntry : getYamlHistory(playerUuid)) {
             history.add(existingEntry.toMap());
         }
 
@@ -178,6 +239,7 @@ public class PunishmentManager {
                 "players." + playerUuid + ".name",
                 entry.getTargetName()
         );
+        save(entry);
     }
 
     private void kickTarget(PunishmentEntry entry) {
@@ -219,7 +281,34 @@ public class PunishmentManager {
         return "players." + playerUuid + ".history";
     }
 
-    private void save() {
-        plugin.getFileManager().saveFileData(FILE_NAME, punishments);
+    private void save(PunishmentEntry entry) {
+        String snapshot = punishments.saveToString();
+        yamlWriter.execute(() -> {
+            YamlConfiguration copy = new YamlConfiguration();
+            try {
+                copy.loadFromString(snapshot);
+                plugin.getFileManager().saveFileData(FILE_NAME, copy);
+            } catch (InvalidConfigurationException exception) {
+                plugin.getLogger().severe("Could not serialize punishment history: "
+                        + exception.getMessage());
+            }
+        });
+        if (databaseManager != null && databaseManager.isEnabled()) {
+            databaseWriter.execute(() -> {
+                try {
+                    databaseManager.save(entry);
+                } catch (SQLException exception) {
+                    plugin.getLogger().warning(
+                            "Could not save punishment to the external database. "
+                                    + "The YAML mirror will still be updated: "
+                                    + exception.getMessage());
+                }
+            });
+        }
+    }
+
+    public void close() {
+        yamlWriter.shutdown();
+        databaseWriter.shutdown();
     }
 }
