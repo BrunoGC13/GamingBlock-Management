@@ -1,3 +1,6 @@
+import org.gradle.jvm.tasks.Jar
+import org.gradle.api.file.DuplicatesStrategy
+
 plugins {
     id("java-library")
     id("xyz.jpenilla.run-paper") version "3.1.0"
@@ -14,6 +17,8 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
     testImplementation("org.mockito:mockito-core:5.15.2")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
+    implementation("org.mariadb.jdbc:mariadb-java-client:4.0.0")
 }
 
 java {
@@ -24,8 +29,14 @@ tasks {
     test {
         useJUnitPlatform()
     }
-    jar {
+
+    withType<Jar>().named("jar") {
         archiveFileName.set("GBManagement-paper-${project.version}.jar")
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+        from(configurations.runtimeClasspath.get().map { file ->
+            if (file.isDirectory) file else zipTree(file)
+        })
     }
 
     runServer {

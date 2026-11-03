@@ -1,1 +1,23 @@
 server-name: "<gray>[<blue>Gaming<red>Block<gray>]"
+server-id: default
+
+database:
+  # External MySQL / MariaDB punishment database
+  enabled: false
+
+  # Optional database name used when jdbc_url is empty.
+  database: "gamingblock_management"
+
+  user: "example"
+  password: "SecretPassword"
+  ip: "127.0.0.1"
+  port: 3306
+
+  # Prefer specifying the complete JDBC URL.
+  #
+  # MariaDB example:
+  # jdbc:mariadb://127.0.0.1:3306/gamingblock_management?useSsl=false&serverTimezone=UTC
+  #
+  # MySQL example:
+  # jdbc:mysql://127.0.0.1:3306/gamingblock_management?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+  jdbc_url: ""

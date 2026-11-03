@@ -3,11 +3,13 @@ package net.tgc.gamingblock_management.punishments;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.tgc.gamingblock_management.GamingBlock;
+import net.tgc.gamingblock_management.db.DatabaseManager;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 
+import java.sql.SQLException;
 import java.time.Instant;
 import java.util.*;
 
@@ -17,10 +19,12 @@ public class PunishmentManager {
     private final GamingBlock plugin;
     private final FileConfiguration punishments;
     private final MiniMessage miniMessage = MiniMessage.miniMessage();
+    private final DatabaseManager databaseManager;
 
     public PunishmentManager(GamingBlock plugin) {
         this.plugin = plugin;
         this.punishments = plugin.getFileManager().getFileData(FILE_NAME);
+        this.databaseManager = plugin.getDatabaseManager();
     }
 
     public PunishmentResult punish(Punishment punishment) {
@@ -79,13 +83,29 @@ public class PunishmentManager {
             return List.of();
         }
 
+        if (databaseManager != null && databaseManager.isEnabled()) {
+            try {
+                return databaseManager.getHistory(playerUuid);
+            } catch (SQLException exception) {
+                plugin.getLogger().warning(
+                        "Could not read punishment history from the "
+                                + "external database. Falling back to YAML: "
+                                + exception.getMessage()
+                );
+            }
+        }
+
+        return getYamlHistory(playerUuid);
+    }
+
+    private List<PunishmentEntry> getYamlHistory(UUID playerUuid) {
         String path = historyPath(playerUuid);
         List<?> rawEntries = punishments.getList(path, List.of());
 
         List<PunishmentEntry> entries = new ArrayList<>();
 
         for (Object rawEntry : rawEntries) {
-            if (!(rawEntry instanceof java.util.Map<?, ?> map)) {
+            if (!(rawEntry instanceof Map<?, ?> map)) {
                 continue;
             }
 
@@ -93,7 +113,8 @@ public class PunishmentManager {
                 entries.add(PunishmentEntry.fromMap(map));
             } catch (IllegalArgumentException exception) {
                 plugin.getLogger().warning(
-                        "Could not load punishment history entry for " + playerUuid
+                        "Could not load punishment history entry for "
+                                + playerUuid
                 );
             }
         }
@@ -162,12 +183,24 @@ public class PunishmentManager {
     }
 
     private void addHistoryEntry(PunishmentEntry entry) {
+        if (databaseManager != null && databaseManager.isEnabled()) {
+            try {
+                databaseManager.save(entry);
+            } catch (SQLException exception) {
+                plugin.getLogger().warning(
+                        "Could not save punishment to the external database. "
+                                + "The YAML mirror will still be updated: "
+                                + exception.getMessage()
+                );
+            }
+        }
+
         UUID playerUuid = entry.getTargetUuid();
         String path = historyPath(playerUuid);
 
         List<Map<String, Object>> history = new ArrayList<>();
 
-        for (PunishmentEntry existingEntry : getHistory(playerUuid)) {
+        for (PunishmentEntry existingEntry : getYamlHistory(playerUuid)) {
             history.add(existingEntry.toMap());
         }
 
