@@ -15,6 +15,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.UUID;
 
 public final class DatabaseManager implements AutoCloseable {
@@ -106,7 +107,7 @@ public final class DatabaseManager implements AutoCloseable {
                 + port
                 + "/"
                 + database
-                + "?useSsl=false&serverTimezone=UTC";
+                + "?sslMode=verify-full&serverTimezone=UTC&socketTimeout=10000";
     }
 
     public boolean isEnabled() {
@@ -123,11 +124,11 @@ public final class DatabaseManager implements AutoCloseable {
             );
         }
 
-        return DriverManager.getConnection(
-                jdbcUrl,
-                username,
-                password
-        );
+        Properties properties = new Properties();
+        properties.setProperty("user", username);
+        properties.setProperty("password", password);
+        properties.setProperty("socketTimeout", "10000");
+        return DriverManager.getConnection(jdbcUrl, properties);
     }
 
     private void initializeSchema() throws SQLException {

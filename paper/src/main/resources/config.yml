@@ -16,8 +16,8 @@ database:
   # Prefer specifying the complete JDBC URL.
   #
   # MariaDB example:
-  # jdbc:mariadb://127.0.0.1:3306/gamingblock_management?useSsl=false&serverTimezone=UTC
+  # jdbc:mariadb://127.0.0.1:3306/gamingblock_management?sslMode=verify-full&serverTimezone=UTC&socketTimeout=10000
   #
-  # MySQL example:
-  # jdbc:mysql://127.0.0.1:3306/gamingblock_management?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+  # MySQL server example (non-TLS):
+  # jdbc:mariadb://127.0.0.1:3306/gamingblock_management?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
   jdbc_url: ""

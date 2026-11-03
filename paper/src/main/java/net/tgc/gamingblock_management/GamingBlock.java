@@ -105,6 +105,10 @@ public final class GamingBlock extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (punishmentManager != null) {
+            punishmentManager.close();
+        }
+
         if (fileManager != null) {
             fileManager.saveFiles();
         }

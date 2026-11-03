@@ -7,16 +7,45 @@ import io.papermc.paper.connection.PlayerLoginConnection;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
 import net.tgc.gamingblock_management.GamingBlock;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.Listener;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 @SuppressWarnings("UnstableApiUsage")
 public class PunishmentListener implements Listener {
     private final GamingBlock plugin;
+    // Also bounds entries for connections that never reach a quit event.
+    private final Map<UUID, List<PunishmentEntry>> loginHistory =
+            Collections.synchronizedMap(new LinkedHashMap<>(128, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<UUID, List<PunishmentEntry>> eldest) {
+                    return size() > 10000;
+                }
+            });
 
     public PunishmentListener(GamingBlock plugin) {
         this.plugin = plugin;
+    }
+
+    @EventHandler
+    public void preLogin(AsyncPlayerPreLoginEvent event) {
+        List<PunishmentEntry> history =
+                plugin.getPunishmentManager().getHistory(event.getUniqueId());
+        Optional<PunishmentEntry> ban = PunishmentManager.activeBan(history);
+        if (ban.isPresent()) {
+            loginHistory.remove(event.getUniqueId());
+            event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_BANNED,
+                    getPunishmentMessage(ban.get()));
+        } else {
+            loginHistory.put(event.getUniqueId(), history);
+        }
     }
 
     @EventHandler
@@ -32,9 +61,10 @@ public class PunishmentListener implements Listener {
 
         if (profile == null || profile.getId() == null) return;
 
-        Optional<PunishmentEntry> activeBan =
-                plugin.getPunishmentManager()
-                        .getActiveBan(profile.getId());
+        List<PunishmentEntry> history = loginHistory.get(profile.getId());
+        if (history == null) return;
+        Optional<PunishmentEntry> activeBan = plugin.getPunishmentManager()
+                .getActiveBanFromSnapshot(profile.getId(), history);
 
         if (activeBan.isEmpty()) {
             return;
@@ -45,6 +75,11 @@ public class PunishmentListener implements Listener {
         Component message = getPunishmentMessage(entry);
 
         event.kickMessage(message);
+    }
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        loginHistory.remove(event.getPlayer().getUniqueId());
     }
 
     private Component getPunishmentMessage(PunishmentEntry entry) {
